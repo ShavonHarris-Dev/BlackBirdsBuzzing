@@ -25,8 +25,71 @@ class AudioService {
   private listeners: Set<(isPlaying: boolean, currentTime: number) => void> = new Set()
 
   async searchYouTube(query: string): Promise<YouTubeSearchResult[]> {
-    // Mock YouTube search results - in production, use YouTube API
-    const mockResults: YouTubeSearchResult[] = [
+    const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY
+    
+    if (!apiKey) {
+      console.warn('YouTube API key not configured, using mock data')
+      return this.getMockResults(query)
+    }
+
+    try {
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?` + new URLSearchParams({
+        part: 'snippet',
+        q: query,
+        key: apiKey,
+        type: 'video',
+        maxResults: '6',
+        safeSearch: 'moderate',
+        videoEmbeddable: 'true',
+        fields: 'items(id(videoId),snippet(title,channelTitle,thumbnails(medium(url))))'
+      })
+
+      const response = await fetch(searchUrl)
+      if (!response.ok) {
+        throw new Error(`YouTube API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      // Get video details for duration and view count
+      const videoIds = data.items.map((item: any) => item.id.videoId).join(',')
+      const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?` + new URLSearchParams({
+        part: 'contentDetails,statistics',
+        id: videoIds,
+        key: apiKey,
+        fields: 'items(id,contentDetails(duration),statistics(viewCount))'
+      })
+
+      const detailsResponse = await fetch(detailsUrl)
+      const detailsData = await detailsResponse.json()
+      const videoDetails = new Map()
+      
+      detailsData.items?.forEach((item: any) => {
+        videoDetails.set(item.id, {
+          duration: this.formatDuration(item.contentDetails.duration),
+          viewCount: this.formatViewCount(item.statistics.viewCount)
+        })
+      })
+
+      return data.items.map((item: any) => {
+        const details = videoDetails.get(item.id.videoId) || { duration: 'N/A', viewCount: '' }
+        return {
+          id: item.id.videoId,
+          title: item.snippet.title,
+          channelTitle: item.snippet.channelTitle,
+          thumbnail: item.snippet.thumbnails?.medium?.url || '/placeholder-music.jpg',
+          duration: details.duration,
+          viewCount: details.viewCount
+        }
+      })
+    } catch (error) {
+      console.error('YouTube search failed:', error)
+      return this.getMockResults(query)
+    }
+  }
+
+  private getMockResults(query: string): YouTubeSearchResult[] {
+    return [
       {
         id: 'mock1',
         title: `${query} - Official Music Video`,
@@ -52,10 +115,30 @@ class AudioService {
         viewCount: '320K views'
       }
     ]
+  }
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800))
-    return mockResults
+  private formatDuration(isoDuration: string): string {
+    const match = isoDuration.match(/PT(\d+H)?(\d+M)?(\d+S)?/)
+    if (!match) return 'N/A'
+    
+    const hours = parseInt(match[1]) || 0
+    const minutes = parseInt(match[2]) || 0
+    const seconds = parseInt(match[3]) || 0
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  private formatViewCount(count: string): string {
+    const num = parseInt(count)
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M views`
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K views`
+    }
+    return `${num} views`
   }
 
   async loadTrack(track: AudioTrack): Promise<boolean> {
@@ -75,7 +158,7 @@ class AudioService {
         this.currentAudio.addEventListener('ended', this.handleEnded.bind(this))
         this.currentAudio.addEventListener('error', this.handleError.bind(this))
         
-        await this.currentAudio.load()
+        this.currentAudio.load()
         this.currentTrack = track
         return true
       }
