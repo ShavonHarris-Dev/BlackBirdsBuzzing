@@ -1,6 +1,6 @@
 interface NavigationProps {
-  currentView: 'songs' | 'upload' | 'vocabulary' | 'practice'
-  onViewChange: (view: 'songs' | 'upload' | 'vocabulary' | 'practice') => void
+  currentView: 'songs' | 'upload' | 'vocabulary' | 'practice' | 'write'
+  onViewChange: (view: 'songs' | 'upload' | 'vocabulary' | 'practice' | 'write') => void
 }
 
 export default function Navigation({ currentView, onViewChange }: NavigationProps) {
@@ -9,6 +9,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
     { id: 'upload', label: 'Upload', icon: '📁' },
     { id: 'vocabulary', label: 'Vocabulary', icon: '📚' },
     { id: 'practice', label: 'Practice', icon: '✏️' },
+    { id: 'write', label: 'Write', icon: '✍️' },
   ] as const
 
   return (

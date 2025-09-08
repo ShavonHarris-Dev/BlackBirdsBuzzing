@@ -1,30 +1,74 @@
 import { useState } from 'react'
+import { useDatabaseContext } from '../hooks/useDatabase'
 
-interface SongUploadProps {
-  language: string
-}
-
-export default function SongUpload({ language }: SongUploadProps) {
+export default function SongUpload() {
+  const { currentLanguage, addSong, isInitialized } = useDatabaseContext()
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [lyrics, setLyrics] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (!isInitialized || !currentLanguage) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement song saving logic
-    console.log('Saving song:', { title, artist, lyrics, language })
-    alert('Song saved! (This is just a demo)')
     
-    // Reset form
-    setTitle('')
-    setArtist('')
-    setLyrics('')
+    if (!title.trim() || !artist.trim() || !lyrics.trim()) {
+      setSubmitMessage('Please fill in all fields')
+      return
+    }
+
+    setIsSubmitting(true)
+    setSubmitMessage('')
+
+    try {
+      const songId = await addSong(title.trim(), artist.trim(), lyrics.trim())
+      setSubmitMessage(`Song "${title}" saved successfully!`)
+      
+      // Reset form after short delay
+      setTimeout(() => {
+        setTitle('')
+        setArtist('')
+        setLyrics('')
+        setSubmitMessage('')
+      }, 2000)
+      
+    } catch (error) {
+      console.error('Failed to save song:', error)
+      setSubmitMessage('Failed to save song. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload New Song</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          Upload New {currentLanguage.name} Song
+        </h2>
+        
+        {submitMessage && (
+          <div className={`mb-4 p-3 rounded-md ${
+            submitMessage.includes('successfully') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {submitMessage}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -59,7 +103,7 @@ export default function SongUpload({ language }: SongUploadProps) {
 
           <div>
             <label htmlFor="lyrics" className="block text-sm font-medium text-gray-700 mb-2">
-              Lyrics ({language})
+              Lyrics ({currentLanguage.name})
             </label>
             <textarea
               id="lyrics"
@@ -77,9 +121,14 @@ export default function SongUpload({ language }: SongUploadProps) {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+            disabled={isSubmitting}
+            className={`w-full py-3 px-4 rounded-md font-medium transition-colors ${
+              isSubmitting 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
-            Save Song
+            {isSubmitting ? 'Saving...' : 'Save Song'}
           </button>
         </form>
       </div>
