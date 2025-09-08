@@ -145,3 +145,31 @@
 ---
 
 *Based on research from successful viral apps like Duolingo, TikTok, and Clubhouse, combined with music app insights from Spotify and language learning psychology.*
+
+
+❌ Non-functional/Mock Features:
+  - YouTube API - Uses mock data, needs real API key
+  - Text-to-Speech - Uses browser API (limited language support)
+  - AI Features - All mock responses (vocabulary assistant, conversation
+  practice)
+  - Audio Playback - YouTube tracks won't actually play
+  - 
+1. End-to-End User Flow Testing:
+  # Create test scenarios in Cypress/Playwright
+  npm install --save-dev @playwright/test
+
+  2. Manual Testing Checklist:
+  - Upload a song → extract vocabulary → learn line-by-line → track progress
+  - Test offline functionality (PWA features)
+  - Test across different languages (Korean, Spanish, Arabic)
+  - Test responsive design on mobile/tablet
+
+  3. Integration Testing:
+  - Database operations (CRUD for songs, vocabulary, progress)
+  - Service worker and offline storage
+  - Language switching and data persistence
+
+  4. Performance Testing:
+  - Large lyric files
+  - Multiple songs per language
+  - Memory usage during audio playback

@@ -27,7 +27,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
   const [isInitialized, setIsInitialized] = useState(false);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [currentLanguage, setCurrentLanguageState] = useState<Language | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const initDatabase = async () => {

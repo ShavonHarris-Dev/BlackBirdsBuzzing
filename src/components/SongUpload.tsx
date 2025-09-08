@@ -36,7 +36,7 @@ export default function SongUpload() {
     setSubmitMessage('')
 
     try {
-      const songId = await addSong(title.trim(), artist.trim(), lyrics.trim())
+      await addSong(title.trim(), artist.trim(), lyrics.trim())
       setSubmitMessage(`Song "${title}" saved successfully!`)
       
       // Reset form after short delay

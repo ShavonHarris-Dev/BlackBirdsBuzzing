@@ -16,7 +16,7 @@ export default function VocabularyPractice({ onBack }: VocabularyPracticeProps) 
   const [vocabulary, setVocabulary] = useState<Vocabulary[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [card, setCard] = useState<PracticeCard | null>(null)
-  const [studiedCards, setStudiedCards] = useState<Set<number>>(new Set())
+  const [, setStudiedCards] = useState<Set<number>>(new Set())
   const [correctAnswers, setCorrectAnswers] = useState(0)
   const [showResults, setShowResults] = useState(false)
 

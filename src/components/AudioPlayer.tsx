@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { audioService, type AudioTrack } from '../lib/audioService'
 
 interface AudioPlayerProps {
@@ -146,7 +146,7 @@ export default function AudioPlayer({ track, onTrackEnd, className = '' }: Audio
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
           height: 16px;

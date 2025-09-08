@@ -163,7 +163,6 @@ export default function SongList() {
             <div>
               <div className="text-2xl font-bold text-green-600">
                 {songs.reduce((total, song) => {
-                  const lyrics = song.lyrics.split('\n').filter(line => line.trim())
                   const progress = getUserProgress(song.id)
                   return total + (progress ? progress.current_line + 1 : 0)
                 }, 0)}

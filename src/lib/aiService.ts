@@ -121,7 +121,7 @@ class AIService {
     return aiResponse
   }
 
-  async translateWord(word: string, fromLanguage: string, toLanguage: string = 'en'): Promise<AITranslationResult> {
+  async translateWord(word: string, fromLanguage: string, _toLanguage: string = 'en'): Promise<AITranslationResult> {
     // Mock translation service - in production, use actual translation API
     await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API delay
     
@@ -154,7 +154,7 @@ class AIService {
     }
   }
 
-  async generateWritingPrompt(vocabulary: string[], language: string): Promise<string> {
+  async generateWritingPrompt(vocabulary: string[], _language: string): Promise<string> {
     const prompts = [
       `Write a short story using these words: ${vocabulary.slice(0, 5).join(', ')}`,
       `Create a song verse with: ${vocabulary.slice(0, 3).join(', ')}`,
@@ -168,7 +168,7 @@ class AIService {
   private async generateAIResponse(
     userMessage: string, 
     context: AIConversationContext,
-    history: AIConversationMessage[]
+    _history: AIConversationMessage[]
   ): Promise<AIConversationMessage> {
     // Simulate thinking time
     await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200))
