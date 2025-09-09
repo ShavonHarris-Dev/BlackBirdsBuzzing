@@ -3,6 +3,7 @@ import { useDatabaseContext } from '../hooks/useDatabase'
 import type { Song } from '../lib/database'
 import AudioPlayer from './AudioPlayer'
 import YouTubeSearch from './YouTubeSearch'
+import TranslatableLine from './TranslatableLine'
 import { audioService, type AudioTrack } from '../lib/audioService'
 
 interface SongLearningProps {
@@ -146,12 +147,14 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
                 Line {currentLine + 1} of {lines.length}
               </p>
               <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-                <p className="text-2xl font-medium text-gray-900 leading-relaxed">
-                  {lines[currentLine]}
-                </p>
+                <TranslatableLine
+                  text={lines[currentLine]}
+                  fromLanguage={currentLanguage?.code || 'en'}
+                  className="text-2xl font-medium text-gray-900"
+                />
                 <button
                   onClick={speakCurrentLine}
-                  className="mt-3 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  className="mt-4 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                 >
                   🔊 Speak Line
                 </button>

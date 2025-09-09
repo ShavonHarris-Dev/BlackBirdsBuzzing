@@ -9,6 +9,27 @@ export default function SongUpload() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
 
+  // Language-specific placeholders
+  const getPlaceholders = () => {
+    const placeholders: Record<string, { title: string; artist: string }> = {
+      'Korean': { title: 'Give Love', artist: 'AKMU' },
+      'Spanish': { title: 'Despacito', artist: 'Luis Fonsi' },
+      'French': { title: 'La Vie En Rose', artist: 'Édith Piaf' },
+      'German': { title: 'Du Hast', artist: 'Rammstein' },
+      'Japanese': { title: 'Sukiyaki', artist: 'Kyu Sakamoto' },
+      'Italian': { title: 'Con Te Partirò', artist: 'Andrea Bocelli' },
+      'Portuguese': { title: 'Garota de Ipanema', artist: 'Tom Jobim' },
+      'Chinese': { title: '月亮代表我的心', artist: 'Teresa Teng' },
+      'Hindi': { title: 'Kal Ho Naa Ho', artist: 'Sonu Nigam' },
+      'Arabic': { title: 'Ya Msafer', artist: 'Mohammed Abdu' },
+      'Swahili': { title: 'Malaika', artist: 'Miriam Makeba' },
+      'Hausa': { title: 'Barauniya', artist: 'Ali Jita' }
+    }
+    return placeholders[currentLanguage?.name || 'Korean'] || placeholders['Korean']
+  }
+
+  const placeholders = getPlaceholders()
+
   if (!isInitialized || !currentLanguage) {
     return (
       <div className="max-w-2xl mx-auto">
@@ -81,7 +102,7 @@ export default function SongUpload() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., Give Love"
+              placeholder={`e.g., ${placeholders.title}`}
               required
             />
           </div>
@@ -96,7 +117,7 @@ export default function SongUpload() {
               value={artist}
               onChange={(e) => setArtist(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., AKMU"
+              placeholder={`e.g., ${placeholders.artist}`}
               required
             />
           </div>

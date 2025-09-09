@@ -23,7 +23,7 @@ export default function VocabularyBank() {
 
   const vocabulary = getVocabularyByLanguage(currentLanguage.id)
   
-  const frequentWords = vocabulary.filter(word => word.frequency_count >= 2)
+  const frequentWords = vocabulary.filter(word => word.frequency_count >= 3)
   const allWords = vocabulary
 
   if (showPractice) {
@@ -43,7 +43,7 @@ export default function VocabularyBank() {
             🌟 Frequent Words ({frequentWords.length})
           </h2>
           <p className="text-sm text-gray-600">
-            Words that appear 2+ times across songs
+            Words that appear 3+ times across songs
           </p>
         </div>
         

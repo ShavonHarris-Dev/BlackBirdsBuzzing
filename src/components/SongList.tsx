@@ -4,7 +4,11 @@ import SongLearning from './SongLearning'
 import YouTubeSearch from './YouTubeSearch'
 import { type AudioTrack } from '../lib/audioService'
 
-export default function SongList() {
+interface SongListProps {
+  onNavigate: (view: 'songs' | 'upload' | 'vocabulary' | 'practice' | 'write') => void
+}
+
+export default function SongList({ onNavigate }: SongListProps) {
   const { currentLanguage, getSongsByLanguage, isInitialized, getUserProgress } = useDatabaseContext()
   const [learningSongId, setLearningSongId] = useState<number | null>(null)
   const [showYouTubeSearch, setShowYouTubeSearch] = useState(false)
@@ -140,7 +144,10 @@ export default function SongList() {
             <p className="text-gray-600 mb-4">
               Upload your first song to start learning {currentLanguage.name} vocabulary!
             </p>
-            <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => onNavigate('upload')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Upload Song
             </button>
           </div>

@@ -16,7 +16,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'songs':
-        return <SongList />
+        return <SongList onNavigate={setCurrentView} />
       case 'upload':
         return <SongUpload />
       case 'vocabulary':
@@ -26,7 +26,7 @@ function App() {
       case 'write':
         return <SongWriter />
       default:
-        return <SongList />
+        return <SongList onNavigate={setCurrentView} />
     }
   }
 
