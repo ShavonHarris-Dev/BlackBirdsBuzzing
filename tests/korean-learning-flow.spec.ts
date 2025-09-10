@@ -3,7 +3,10 @@ import { test, expect } from '@playwright/test';
 // Helper function to select Korean language
 async function selectKoreanLanguage(page: any) {
   await page.waitForLoadState('networkidle');
-  await page.waitForSelector('select');
+  await page.waitForSelector('select', { timeout: 10000 });
+  
+  // Wait a moment for the database to initialize
+  await page.waitForTimeout(1000);
   
   // Find Korean option value by looking at all options
   const koreanValue = await page.evaluate(() => {
@@ -19,6 +22,8 @@ async function selectKoreanLanguage(page: any) {
   
   if (koreanValue) {
     await page.selectOption('select', koreanValue);
+    // Wait for the UI to update after language selection
+    await page.waitForTimeout(500);
   } else {
     throw new Error('Korean language option not found');
   }
@@ -30,8 +35,11 @@ test.describe('Korean Language Learning Flow', () => {
     
     // 1. Select Korean language
     await selectKoreanLanguage(page);
-    // Verify Korean is selected and upload area is shown
-    await expect(page.locator('text=Upload your first song to start learning')).toBeVisible();
+    
+    // 2. Wait for database to initialize and empty state to show
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=No Korean songs yet')).toBeVisible();
+    await expect(page.locator(':text("Upload your first song")')).toBeVisible();
     
     // 2. Upload a Korean song
     await page.click('text=Upload Song');

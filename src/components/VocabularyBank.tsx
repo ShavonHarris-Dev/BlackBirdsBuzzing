@@ -79,21 +79,13 @@ export default function VocabularyBank() {
           <h2 className="text-xl font-bold text-gray-900">
             📚 All Vocabulary ({allWords.length})
           </h2>
-          <div className="space-x-2">
-            <button 
-              onClick={() => setShowAIAssistant(true)}
-              className="px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
-            >
-              🤖 AI Translate
-            </button>
-            <button 
-              onClick={() => setShowPractice(true)}
-              disabled={allWords.length === 0}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Practice All ({allWords.length})
-            </button>
-          </div>
+          <button 
+            onClick={() => setShowPractice(true)}
+            disabled={allWords.length === 0}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Practice All ({allWords.length})
+          </button>
         </div>
         
         {allWords.length > 0 ? (
@@ -113,7 +105,7 @@ export default function VocabularyBank() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
-                    {word.frequency_count}x
+                    {word.practice_count > 0 ? `${word.practice_count}x` : '0x'}
                   </span>
                   <button 
                     onClick={() => setShowPractice(true)}

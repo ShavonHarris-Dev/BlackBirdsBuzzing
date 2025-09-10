@@ -22,6 +22,7 @@ export interface Vocabulary {
   translation: string;
   language_id: number;
   frequency_count: number;
+  practice_count: number;
   first_learned_from_song_id: number;
   created_at: string;
 }
@@ -59,6 +60,8 @@ class DatabaseManager {
       if (savedData) {
         const data = new Uint8Array(JSON.parse(savedData));
         this.db = new SQL.Database(data);
+        // Run migrations for existing database
+        this.migrateTables();
       } else {
         this.db = new SQL.Database();
         this.createTables();
@@ -99,6 +102,7 @@ class DatabaseManager {
         translation TEXT,
         language_id INTEGER NOT NULL,
         frequency_count INTEGER DEFAULT 1,
+        practice_count INTEGER DEFAULT 0,
         first_learned_from_song_id INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (language_id) REFERENCES languages (id),
@@ -131,6 +135,26 @@ class DatabaseManager {
       CREATE INDEX idx_vocabulary_word ON vocabulary(word);
       CREATE INDEX idx_user_progress_song ON user_progress(song_id);
     `);
+
+    // Add practice_count column to existing vocabulary tables (migration)
+    this.migrateTables();
+  }
+
+  private migrateTables(): void {
+    if (!this.db) return;
+    
+    try {
+      // Check if practice_count column exists
+      const columns = this.db.exec("PRAGMA table_info(vocabulary)");
+      const hasPracticeCount = columns[0]?.values.some(row => row[1] === 'practice_count');
+      
+      if (!hasPracticeCount) {
+        this.db.exec('ALTER TABLE vocabulary ADD COLUMN practice_count INTEGER DEFAULT 0');
+        console.log('Added practice_count column to vocabulary table');
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+    }
   }
 
   private seedInitialData(): void {
@@ -304,6 +328,7 @@ Para siempre (Forever)`;
         translation: row.translation as string,
         language_id: row.language_id as number,
         frequency_count: row.frequency_count as number,
+        practice_count: (row.practice_count as number) || 0,
         first_learned_from_song_id: row.first_learned_from_song_id as number,
         created_at: row.created_at as string
       });
@@ -347,6 +372,15 @@ Para siempre (Forever)`;
     
     stmt.free();
     return null;
+  }
+
+  updateVocabularyPracticeCount(vocabularyId: number): void {
+    if (!this.db) throw new Error('Database not initialized');
+    
+    const stmt = this.db.prepare('UPDATE vocabulary SET practice_count = practice_count + 1 WHERE id = ?');
+    stmt.run([vocabularyId]);
+    stmt.free();
+    this.save();
   }
 
   close(): void {

@@ -12,7 +12,7 @@ interface PracticeCard {
 }
 
 export default function VocabularyPractice({ onBack }: VocabularyPracticeProps) {
-  const { currentLanguage, getVocabularyByLanguage, isInitialized } = useDatabaseContext()
+  const { currentLanguage, getVocabularyByLanguage, updateVocabularyPracticeCount, isInitialized } = useDatabaseContext()
   const [vocabulary, setVocabulary] = useState<Vocabulary[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [card, setCard] = useState<PracticeCard | null>(null)
@@ -84,6 +84,8 @@ export default function VocabularyPractice({ onBack }: VocabularyPracticeProps) 
     if (card) {
       setCorrectAnswers(prev => prev + 1)
       setStudiedCards(prev => new Set([...prev, card.vocabulary.id]))
+      // Increment practice count for this vocabulary word
+      updateVocabularyPracticeCount(card.vocabulary.id)
       nextCard()
     }
   }
@@ -91,6 +93,8 @@ export default function VocabularyPractice({ onBack }: VocabularyPracticeProps) 
   const markIncorrect = () => {
     if (card) {
       setStudiedCards(prev => new Set([...prev, card.vocabulary.id]))
+      // Increment practice count for this vocabulary word
+      updateVocabularyPracticeCount(card.vocabulary.id)
       nextCard()
     }
   }

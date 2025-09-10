@@ -14,6 +14,7 @@ interface DatabaseContextType {
   getVocabularyByLanguage: (languageId: number) => Vocabulary[];
   updateUserProgress: (songId: number, currentLine: number, completed?: boolean) => void;
   getUserProgress: (songId: number) => UserProgress | null;
+  updateVocabularyPracticeCount: (vocabularyId: number) => void;
   refreshData: () => void;
 }
 
@@ -103,6 +104,11 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     return db.getUserProgress(songId);
   };
 
+  const updateVocabularyPracticeCount = (vocabularyId: number): void => {
+    db.updateVocabularyPracticeCount(vocabularyId);
+    setRefreshTrigger(prev => prev + 1); // Trigger re-render
+  };
+
   const refreshData = () => {
     setRefreshTrigger(prev => prev + 1);
   };
@@ -118,6 +124,7 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     getVocabularyByLanguage,
     updateUserProgress,
     getUserProgress,
+    updateVocabularyPracticeCount,
     refreshData,
   };
 
