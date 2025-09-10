@@ -8,13 +8,12 @@ interface DatabaseContextType {
   languages: Language[];
   currentLanguage: Language | null;
   setCurrentLanguage: (language: Language) => void;
-  addSong: (title: string, artist: string, lyrics: string) => Promise<number>;
+  addSong: (title: string, artist: string, lyrics: string, englishTranslation?: string) => Promise<number>;
   getSongsByLanguage: (languageId: number) => Song[];
   addVocabulary: (word: string, translation: string, songId?: number) => void;
   getVocabularyByLanguage: (languageId: number) => Vocabulary[];
   updateUserProgress: (songId: number, currentLine: number, completed?: boolean) => void;
   getUserProgress: (songId: number) => UserProgress | null;
-  updateVocabularyPracticeCount: (vocabularyId: number) => void;
   refreshData: () => void;
 }
 
@@ -63,21 +62,36 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     localStorage.setItem('currentLanguageId', language.id.toString());
   };
 
-  const addSong = async (title: string, artist: string, lyrics: string): Promise<number> => {
+  const addSong = async (title: string, artist: string, lyrics: string, englishTranslation?: string): Promise<number> => {
     if (!currentLanguage) throw new Error('No language selected');
     
-    const songId = db.addSong(title, artist, currentLanguage.id, lyrics);
+    const songId = db.addSong(title, artist, currentLanguage.id, lyrics, englishTranslation);
     
-    // Extract vocabulary from lyrics and add basic translations
+    // Extract vocabulary from lyrics and add translations
     const { getUniqueWords } = await import('../lib/textAnalysis');
-    const { getTranslation } = await import('../lib/translations');
     const words = getUniqueWords(lyrics);
     
-    // Add vocabulary words to database with basic translations
-    words.slice(0, 50).forEach(word => {
-      const translation = getTranslation(word, currentLanguage.code);
-      db.addVocabulary(word, translation, currentLanguage.id, songId);
-    });
+    // Import translation function once
+    const { getTranslation } = await import('../lib/translations');
+    
+    if (englishTranslation) {
+      // If we have English translation, use line-by-line mapping for better accuracy
+      const originalLines = lyrics.split('\n').filter(line => line.trim());
+      const translationLines = englishTranslation.split('\n').filter(line => line.trim());
+      
+      // Create vocabulary with context from parallel text (simplified for now)
+      words.slice(0, 50).forEach(word => {
+        // For now, use basic translation - we can enhance this later with context
+        const translation = getTranslation(word, currentLanguage.code);
+        db.addVocabulary(word, translation, currentLanguage.id, songId);
+      });
+    } else {
+      // Fallback to basic translations if no English version provided
+      words.slice(0, 50).forEach(word => {
+        const translation = getTranslation(word, currentLanguage.code);
+        db.addVocabulary(word, translation, currentLanguage.id, songId);
+      });
+    }
     
     return songId;
   };
@@ -104,11 +118,6 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     return db.getUserProgress(songId);
   };
 
-  const updateVocabularyPracticeCount = (vocabularyId: number): void => {
-    db.updateVocabularyPracticeCount(vocabularyId);
-    setRefreshTrigger(prev => prev + 1); // Trigger re-render
-  };
-
   const refreshData = () => {
     setRefreshTrigger(prev => prev + 1);
   };
@@ -124,7 +133,6 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
     getVocabularyByLanguage,
     updateUserProgress,
     getUserProgress,
-    updateVocabularyPracticeCount,
     refreshData,
   };
 

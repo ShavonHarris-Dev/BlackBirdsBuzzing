@@ -6,6 +6,8 @@ export default function SongUpload() {
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [lyrics, setLyrics] = useState('')
+  const [englishTranslation, setEnglishTranslation] = useState('')
+  const [includeTranslation, setIncludeTranslation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
 
@@ -49,7 +51,12 @@ export default function SongUpload() {
     e.preventDefault()
     
     if (!title.trim() || !artist.trim() || !lyrics.trim()) {
-      setSubmitMessage('Please fill in all fields')
+      setSubmitMessage('Please fill in all required fields')
+      return
+    }
+
+    if (includeTranslation && !englishTranslation.trim()) {
+      setSubmitMessage('Please provide English translation or disable the translation option')
       return
     }
 
@@ -57,20 +64,27 @@ export default function SongUpload() {
     setSubmitMessage('')
 
     try {
-      await addSong(title.trim(), artist.trim(), lyrics.trim())
-      setSubmitMessage(`Song "${title}" saved successfully!`)
+      const translationToSave = includeTranslation ? englishTranslation.trim() : undefined
+      await addSong(title.trim(), artist.trim(), lyrics.trim(), translationToSave)
+      
+      const successMsg = includeTranslation 
+        ? `Song "${title}" saved with English translation!`
+        : `Song "${title}" saved successfully!`
+      setSubmitMessage(successMsg)
       
       // Reset form after short delay
       setTimeout(() => {
         setTitle('')
         setArtist('')
         setLyrics('')
+        setEnglishTranslation('')
+        setIncludeTranslation(false)
         setSubmitMessage('')
       }, 2000)
       
     } catch (error) {
       console.error('Failed to save song:', error)
-      setSubmitMessage('Failed to save song. Please try again.')
+      setSubmitMessage(`Failed to save song: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -122,15 +136,42 @@ export default function SongUpload() {
             />
           </div>
 
+          {/* Translation Toggle */}
+          <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+            <input
+              type="checkbox"
+              id="includeTranslation"
+              checked={includeTranslation}
+              onChange={(e) => setIncludeTranslation(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="includeTranslation" className="flex items-center cursor-pointer">
+              <span className="text-sm font-medium text-gray-900 ml-2">
+                🌟 Include English Translation (Recommended!)
+              </span>
+            </label>
+          </div>
+          
+          {includeTranslation && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <span className="text-yellow-600 text-sm font-medium">💡 Pro Tip:</span>
+              </div>
+              <p className="text-sm text-yellow-800 mb-3">
+                Adding an English translation will give you much more accurate line-by-line translations and better vocabulary learning!
+              </p>
+            </div>
+          )}
+
           <div>
             <label htmlFor="lyrics" className="block text-sm font-medium text-gray-700 mb-2">
-              Lyrics ({currentLanguage.name})
+              Lyrics ({currentLanguage.name}) *
             </label>
             <textarea
               id="lyrics"
               value={lyrics}
               onChange={(e) => setLyrics(e.target.value)}
-              rows={12}
+              rows={includeTranslation ? 8 : 12}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Paste the song lyrics here..."
               required
@@ -139,6 +180,26 @@ export default function SongUpload() {
               Tip: Each line should be on its own row for best learning experience
             </p>
           </div>
+
+          {includeTranslation && (
+            <div>
+              <label htmlFor="englishTranslation" className="block text-sm font-medium text-gray-700 mb-2">
+                English Translation *
+              </label>
+              <textarea
+                id="englishTranslation"
+                value={englishTranslation}
+                onChange={(e) => setEnglishTranslation(e.target.value)}
+                rows={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Paste the English translation here..."
+                required={includeTranslation}
+              />
+              <p className="mt-2 text-sm text-purple-600">
+                💯 Make sure each line matches the corresponding line in the original lyrics above
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"

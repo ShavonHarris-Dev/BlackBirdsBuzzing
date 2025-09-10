@@ -4,6 +4,7 @@ import type { Song } from '../lib/database'
 import AudioPlayer from './AudioPlayer'
 import YouTubeSearch from './YouTubeSearch'
 import TranslatableLine from './TranslatableLine'
+import ParallelTextLine from './ParallelTextLine'
 import { audioService, type AudioTrack } from '../lib/audioService'
 
 interface SongLearningProps {
@@ -15,6 +16,8 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
   const { getSongsByLanguage, currentLanguage, updateUserProgress, getUserProgress } = useDatabaseContext()
   const [song, setSong] = useState<Song | null>(null)
   const [lines, setLines] = useState<string[]>([])
+  const [translationLines, setTranslationLines] = useState<string[]>([])
+  const [hasParallelText, setHasParallelText] = useState(false)
   const [currentLine, setCurrentLine] = useState(0)
   const [completedLines, setCompletedLines] = useState<Set<number>>(new Set())
   const [currentTrack, setCurrentTrack] = useState<AudioTrack | null>(null)
@@ -30,6 +33,16 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
       setSong(foundSong)
       const lyricsLines = foundSong.lyrics.split('\n').filter(line => line.trim())
       setLines(lyricsLines)
+      
+      // Check if we have English translation for parallel text
+      if (foundSong.english_translation) {
+        const englishLines = foundSong.english_translation.split('\n').filter(line => line.trim())
+        setTranslationLines(englishLines)
+        setHasParallelText(true)
+      } else {
+        setTranslationLines([])
+        setHasParallelText(false)
+      }
       
       // Load existing progress
       const progress = getUserProgress(songId)
@@ -84,7 +97,13 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
     )
   }
 
-  const progressPercentage = Math.round((completedLines.size / lines.length) * 100)
+  // Check if song is completed via database progress
+  const songProgress = getUserProgress(songId)
+  const isSongCompleted = songProgress && songProgress.completed
+  
+  const progressPercentage = isSongCompleted 
+    ? 100 
+    : Math.round((completedLines.size / lines.length) * 100)
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -105,7 +124,13 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
 
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{song.title}</h1>
-          <p className="text-xl text-gray-600 mb-4">{song.artist}</p>
+          <p className="text-xl text-gray-600 mb-2">{song.artist}</p>
+          {hasParallelText && (
+            <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium mb-4">
+              <span className="mr-1">✨</span>
+              Enhanced with Human Translation
+            </div>
+          )}
           
           {/* Audio Controls */}
           <div className="mb-4">
@@ -147,11 +172,19 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
                 Line {currentLine + 1} of {lines.length}
               </p>
               <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-                <TranslatableLine
-                  text={lines[currentLine]}
-                  fromLanguage={currentLanguage?.code || 'en'}
-                  className="text-2xl font-medium text-gray-900"
-                />
+                {hasParallelText && translationLines[currentLine] ? (
+                  <ParallelTextLine
+                    originalText={lines[currentLine]}
+                    translationText={translationLines[currentLine]}
+                    className="text-2xl font-medium text-gray-900"
+                  />
+                ) : (
+                  <TranslatableLine
+                    text={lines[currentLine]}
+                    fromLanguage={currentLanguage?.code || 'en'}
+                    className="text-2xl font-medium text-gray-900"
+                  />
+                )}
                 <button
                   onClick={speakCurrentLine}
                   className="mt-4 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -177,13 +210,27 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
                 {completedLines.has(currentLine) ? 'Review Again' : 'I understand this line'}
               </button>
               
-              <button
-                onClick={() => goToLine(Math.min(lines.length - 1, currentLine + 1))}
-                disabled={currentLine === lines.length - 1}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next Line
-              </button>
+              {currentLine === lines.length - 1 ? (
+                <button
+                  onClick={() => {
+                    // Mark the current line as complete and finish the song
+                    const newCompletedLines = new Set(completedLines)
+                    newCompletedLines.add(currentLine)
+                    setCompletedLines(newCompletedLines)
+                    updateUserProgress(songId, currentLine, true)
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  Finish Song
+                </button>
+              ) : (
+                <button
+                  onClick={() => goToLine(Math.min(lines.length - 1, currentLine + 1))}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  Next Line
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -225,7 +272,7 @@ export default function SongLearning({ songId, onBack }: SongLearningProps) {
       </div>
 
       {/* Completion Message */}
-      {completedLines.size === lines.length && (
+      {isSongCompleted && (
         <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mt-6 text-center">
           <div className="text-4xl mb-2">🎉</div>
           <h3 className="text-xl font-semibold text-green-800 mb-2">

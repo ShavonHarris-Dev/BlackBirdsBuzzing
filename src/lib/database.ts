@@ -13,6 +13,7 @@ export interface Song {
   artist: string;
   language_id: number;
   lyrics: string;
+  english_translation?: string;
   created_at: string;
 }
 
@@ -22,7 +23,6 @@ export interface Vocabulary {
   translation: string;
   language_id: number;
   frequency_count: number;
-  practice_count: number;
   first_learned_from_song_id: number;
   created_at: string;
 }
@@ -60,8 +60,7 @@ class DatabaseManager {
       if (savedData) {
         const data = new Uint8Array(JSON.parse(savedData));
         this.db = new SQL.Database(data);
-        // Run migrations for existing database
-        this.migrateTables();
+        this.runMigrations(); // Run migrations for existing databases
       } else {
         this.db = new SQL.Database();
         this.createTables();
@@ -72,6 +71,24 @@ class DatabaseManager {
     } catch (error) {
       console.error('Failed to initialize database:', error);
       throw error;
+    }
+  }
+
+  private runMigrations(): void {
+    if (!this.db) return;
+    
+    // Check if english_translation column exists, if not add it
+    try {
+      const result = this.db.exec("PRAGMA table_info(songs)");
+      const columns = result[0]?.values || [];
+      const hasTranslationColumn = columns.some(col => col[1] === 'english_translation');
+      
+      if (!hasTranslationColumn) {
+        console.log('Adding english_translation column to existing database');
+        this.db.exec('ALTER TABLE songs ADD COLUMN english_translation TEXT');
+      }
+    } catch (error) {
+      console.log('Migration check failed, probably new database:', error);
     }
   }
 
@@ -92,6 +109,7 @@ class DatabaseManager {
         artist TEXT NOT NULL,
         language_id INTEGER NOT NULL,
         lyrics TEXT NOT NULL,
+        english_translation TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (language_id) REFERENCES languages (id)
       );
@@ -102,7 +120,6 @@ class DatabaseManager {
         translation TEXT,
         language_id INTEGER NOT NULL,
         frequency_count INTEGER DEFAULT 1,
-        practice_count INTEGER DEFAULT 0,
         first_learned_from_song_id INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (language_id) REFERENCES languages (id),
@@ -136,25 +153,6 @@ class DatabaseManager {
       CREATE INDEX idx_user_progress_song ON user_progress(song_id);
     `);
 
-    // Add practice_count column to existing vocabulary tables (migration)
-    this.migrateTables();
-  }
-
-  private migrateTables(): void {
-    if (!this.db) return;
-    
-    try {
-      // Check if practice_count column exists
-      const columns = this.db.exec("PRAGMA table_info(vocabulary)");
-      const hasPracticeCount = columns[0]?.values.some(row => row[1] === 'practice_count');
-      
-      if (!hasPracticeCount) {
-        this.db.exec('ALTER TABLE vocabulary ADD COLUMN practice_count INTEGER DEFAULT 0');
-        console.log('Added practice_count column to vocabulary table');
-      }
-    } catch (error) {
-      console.error('Migration error:', error);
-    }
   }
 
   private seedInitialData(): void {
@@ -256,11 +254,11 @@ Para siempre (Forever)`;
     return results;
   }
 
-  addSong(title: string, artist: string, languageId: number, lyrics: string): number {
+  addSong(title: string, artist: string, languageId: number, lyrics: string, englishTranslation?: string): number {
     if (!this.db) throw new Error('Database not initialized');
     
-    const stmt = this.db.prepare('INSERT INTO songs (title, artist, language_id, lyrics) VALUES (?, ?, ?, ?)');
-    stmt.run([title, artist, languageId, lyrics]);
+    const stmt = this.db.prepare('INSERT INTO songs (title, artist, language_id, lyrics, english_translation) VALUES (?, ?, ?, ?, ?)');
+    stmt.run([title, artist, languageId, lyrics, englishTranslation || null]);
     stmt.free();
     
     const songId = this.db.exec('SELECT last_insert_rowid() as id')[0].values[0][0] as number;
@@ -284,6 +282,7 @@ Para siempre (Forever)`;
         artist: row.artist as string,
         language_id: row.language_id as number,
         lyrics: row.lyrics as string,
+        english_translation: row.english_translation as string || undefined,
         created_at: row.created_at as string
       });
     }
@@ -328,7 +327,6 @@ Para siempre (Forever)`;
         translation: row.translation as string,
         language_id: row.language_id as number,
         frequency_count: row.frequency_count as number,
-        practice_count: (row.practice_count as number) || 0,
         first_learned_from_song_id: row.first_learned_from_song_id as number,
         created_at: row.created_at as string
       });
@@ -372,15 +370,6 @@ Para siempre (Forever)`;
     
     stmt.free();
     return null;
-  }
-
-  updateVocabularyPracticeCount(vocabularyId: number): void {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const stmt = this.db.prepare('UPDATE vocabulary SET practice_count = practice_count + 1 WHERE id = ?');
-    stmt.run([vocabularyId]);
-    stmt.free();
-    this.save();
   }
 
   close(): void {

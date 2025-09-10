@@ -30,6 +30,7 @@ export default function VocabularyBank() {
     return <VocabularyPractice onBack={() => setShowPractice(false)} />
   }
 
+
   if (showAIAssistant) {
     return <AIVocabularyAssistant onBack={() => setShowAIAssistant(false)} />
   }
@@ -105,7 +106,7 @@ export default function VocabularyBank() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
-                    {word.practice_count > 0 ? `${word.practice_count}x` : '0x'}
+                    {word.frequency_count}x
                   </span>
                   <button 
                     onClick={() => setShowPractice(true)}
